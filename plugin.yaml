@@ -1,0 +1,5 @@
+name: earthmc_vp
+version: 1.0.0
+main: main.py
+author: YourName
+summary: EarthMC VoteParty Monitor
