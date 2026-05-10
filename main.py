@@ -1,4 +1,4 @@
-mport json
+import json
 import os
 import aiohttp
 from astrbot.api.event import filter
@@ -33,7 +33,8 @@ class EarthMCPlugin(Star):
         vp = data["voteParty"]
         cur = vp["target"] - vp["numRemaining"]
         pct = round(cur / vp["target"] * 100, 1)
-        bar = "█" * int(20 * cur / vp["target"]) + "░" * (20 - int(20 * cur / vp["target"]))
+        filled = int(20 * cur / vp["target"])
+        bar = "█" * filled + "░" * (20 - filled)
         yield event.plain_result(
             f"🗳️ VoteParty\n"
             f"[{bar}] {pct}%\n"
@@ -53,13 +54,22 @@ class EarthMCPlugin(Star):
             return
         p = data[0]
         st = p.get("status", {})
+        town = p["town"]["name"] if p.get("town") else "无"
+        nation = p["nation"]["name"] if p.get("nation") else "无"
+        balance = p.get("stats", {}).get("balance", 0)
+        online = "在线 🟢" if st.get("isOnline") else "离线 🔴"
+        role = ""
+        if st.get("isMayor"):
+            role += "市长 "
+        if st.get("isKing"):
+            role += "国王"
         yield event.plain_result(
             f"👤 {p['name']}\n"
-            f"城镇: {p['town']['name'] if p.get('town') else '无'}\n"
-            f"国家: {p['nation']['name'] if p.get('nation') else '无'}\n"
-            f"余额: {p.get('stats', {}).get('balance', 0)} G\n"
-            f"状态: {'在线 🟢' if st.get('isOnline') else '离线 🔴'}\n"
-            f"身份: {'市长 ' if st.get('isMayor') else ''}{'国王' if st.get('isKing') else ''}"
+            f"城镇: {town}\n"
+            f"国家: {nation}\n"
+            f"余额: {balance} G\n"
+            f"状态: {online}\n"
+            f"身份: {role if role else '居民'}"
         )
 
     @filter.command("town")
@@ -74,12 +84,20 @@ class EarthMCPlugin(Star):
         t = data[0]
         st = t.get("status", {})
         pf = t.get("perms", {}).get("flags", {})
+        nation = t["nation"]["name"] if t.get("nation") else "无"
+        tags = ""
+        if st.get("isCapital"):
+            tags += "首都 "
+        if st.get("isOpen"):
+            tags += "开放 "
+        if st.get("isNeutral"):
+            tags += "中立"
         yield event.plain_result(
             f"🏘️ {t['name']}\n"
             f"市长: {t['mayor']['name']}\n"
-            f"国家: {t['nation']['name'] if t.get('nation') else '无'}\n"
+            f"国家: {nation}\n"
             f"居民: {t['stats']['numResidents']}  格数: {t['stats']['numTownBlocks']}\n"
             f"余额: {t['stats']['balance']} G\n"
-            f"状态: {'首都 ' if st.get('isCapital') else ''}{'开放 ' if st.get('isOpen') else ''}{'中立' if st.get('isNeutral') else ''}\n"
+            f"标签: {tags if tags else '普通'}\n"
             f"PvP: {'✅' if pf.get('pvp') else '❌'}  公告: {t.get('board') or '无'}"
         )
